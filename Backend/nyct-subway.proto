@@ -1,0 +1,22 @@
+syntax = "proto2";
+
+package transit_realtime;
+
+import "gtfs-realtime.proto";
+
+extend TripDescriptor {
+  optional NYCTTripDescriptor nyct_trip_descriptor = 1001;
+}
+
+extend VehiclePosition {
+  optional NYCTVehicleDescriptor nyct_vehicle_descriptor = 1001;
+}
+
+message NYCTTripDescriptor {
+  optional string train_id = 1;
+  optional string direction = 2;
+}
+
+message NYCTVehicleDescriptor {
+  optional string run_id = 1;
+}

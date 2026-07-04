@@ -1,0 +1,166 @@
+syntax = "proto2";
+
+package transit_realtime;
+
+message FeedMessage {
+  required FeedHeader header = 1;
+  repeated FeedEntity entity = 2;
+}
+
+message FeedHeader {
+  enum Incrementality {
+    FULL_DATASET = 0;
+    DIFFERENTIAL = 1;
+  }
+  required string gtfs_realtime_version = 1;
+  optional Incrementality incrementality = 2 [default = FULL_DATASET];
+  optional uint64 timestamp = 3;
+}
+
+message FeedEntity {
+  required string id = 1;
+  optional bool is_deleted = 2 [default = false];
+  optional TripUpdate trip_update = 3;
+  optional VehiclePosition vehicle = 4;
+  optional Alert alert = 5;
+}
+
+message TripUpdate {
+  message StopTimeEvent {
+    optional int32 delay = 1;
+    optional int32 time = 2;
+    optional int32 uncertainty = 3;
+  }
+
+  message StopTimeUpdate {
+    enum ScheduleRelationship {
+      SCHEDULED = 0;
+      SKIPPED = 1;
+      NO_DATA = 2;
+    }
+    optional string stop_sequence = 1;
+    optional string stop_id = 2;
+    optional StopTimeEvent arrival = 3;
+    optional StopTimeEvent departure = 4;
+    optional ScheduleRelationship schedule_relationship = 5;
+  }
+
+  required TripDescriptor trip = 1;
+  repeated StopTimeUpdate stop_time_update = 2;
+  optional uint64 timestamp = 3;
+  optional VehicleDescriptor vehicle = 4;
+}
+
+message VehiclePosition {
+  message Position {
+    optional float latitude = 1;
+    optional float longitude = 2;
+    optional float bearing = 3;
+    optional double odometer = 4;
+    optional float speed = 5;
+  }
+
+  required TripDescriptor trip = 1;
+  optional VehicleDescriptor vehicle = 2;
+  optional Position position = 3;
+  optional uint64 timestamp = 4;
+  optional string stop_id = 5;
+  optional uint32 current_stop_sequence = 6;
+  enum VehicleStopStatus {
+    INCOMING_AT = 0;
+    STOPPED_AT = 1;
+    IN_TRANSIT_TO = 2;
+  }
+  optional VehicleStopStatus current_status = 7;
+  optional uint32 congestion_level = 8;
+  optional OccupancyStatus occupancy_status = 9;
+
+  enum OccupancyStatus {
+    EMPTY = 0;
+    MANY_SEATS_AVAILABLE = 1;
+    FEW_SEATS_AVAILABLE = 2;
+    STANDING_ROOM_ONLY = 3;
+    CRUSHED_STANDING_ROOM_ONLY = 4;
+    FULL = 5;
+    NOT_ACCEPTING_PASSENGERS = 6;
+  }
+}
+
+message Alert {
+  enum Cause {
+    UNKNOWN_CAUSE = 1;
+    OTHER_CAUSE = 2;
+    TECHNICAL_PROBLEM = 3;
+    STRIKE = 4;
+    DEMONSTRATION = 5;
+    ACCIDENT = 6;
+    HOLIDAY = 7;
+    WEATHER = 8;
+    MAINTENANCE = 9;
+    CONSTRUCTION = 10;
+    POLICE_ACTIVITY = 11;
+    MEDICAL_EMERGENCY = 12;
+  }
+
+  enum Effect {
+    NO_SERVICE = 1;
+    REDUCED_SERVICE = 2;
+    SIGNIFICANT_DELAYS = 3;
+    DETOUR = 4;
+    ADDITIONAL_SERVICE = 5;
+    MODIFIED_SERVICE = 6;
+    OTHER_EFFECT = 7;
+    UNKNOWN_EFFECT = 8;
+    STOP_MOVED = 9;
+  }
+
+  message TimeRange {
+    optional uint64 start = 1;
+    optional uint64 end = 2;
+  }
+
+  message EntitySelector {
+    optional string agency_id = 1;
+    optional string route_id = 2;
+    optional int32 route_type = 3;
+    optional TripDescriptor trip = 4;
+    optional string stop_id = 5;
+  }
+
+  repeated TimeRange active_period = 1;
+  repeated EntitySelector informed_entity = 2;
+  optional Cause cause = 3;
+  optional Effect effect = 4;
+  optional TranslatedString url = 5;
+  optional TranslatedString header_text = 6;
+  optional TranslatedString description_text = 7;
+}
+
+message TripDescriptor {
+  enum ScheduleRelationship {
+    SCHEDULED = 0;
+    ADDED = 1;
+    UNSCHEDULED = 2;
+    CANCELED = 3;
+  }
+  optional string trip_id = 1;
+  optional string route_id = 2;
+  optional string direction_id = 3;
+  optional string start_time = 4;
+  optional string start_date = 5;
+  optional ScheduleRelationship schedule_relationship = 6;
+}
+
+message VehicleDescriptor {
+  optional string id = 1;
+  optional string label = 2;
+  optional string license_plate = 3;
+}
+
+message TranslatedString {
+  message Translation {
+    required string text = 1;
+    optional string language = 2;
+  }
+  repeated Translation translation = 1;
+}
